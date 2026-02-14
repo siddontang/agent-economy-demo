@@ -231,7 +231,7 @@ def phase_5_multi_agent(memory, conn):
 
     agents = []
     for agent_id, agent_type, tokens in agents_config:
-        wallet = X402Client(network="base")
+        wallet = X402Client(network="base", mode="simulation")
         agent = MarketAgent(agent_id, memory, wallet)
         agents.append((agent, tokens))
         print(f"  {GREEN}🤖 {agent_id}{RESET} [{agent_type}] monitoring {', '.join(tokens)}")
@@ -309,6 +309,9 @@ def summary():
 def main():
     parser = argparse.ArgumentParser(description="Agent Economy Demo")
     parser.add_argument("--connection-string", help="Reuse existing TiDB connection")
+    parser.add_argument("--private-key", help="EVM private key for real x402 signing (0x...)")
+    parser.add_argument("--mode", choices=["live", "simulation", "auto"], default="auto",
+                        help="x402 mode: live (real endpoints), simulation (demo data), auto (detect)")
     args = parser.parse_args()
 
     banner()
@@ -333,8 +336,15 @@ def main():
 
     # Initialize
     memory = AgentMemory(conn)
-    wallet = X402Client(network="base")
+    mode = args.mode if args.mode != "auto" else ("simulation" if not args.private_key else "auto")
+    wallet = X402Client(private_key=args.private_key, network="base", mode=mode)
     agent = MarketAgent("market-agent-01", memory, wallet)
+
+    if wallet.signer._has_eth:
+        print(f"{GREEN}🔑 Real EVM wallet loaded: {wallet.wallet_address[:10]}...{RESET}")
+    else:
+        print(f"{YELLOW}🔧 Simulation mode (no private key — use --private-key for live x402){RESET}")
+    print()
 
     # Run all phases
     phase_1_setup(memory, wallet)

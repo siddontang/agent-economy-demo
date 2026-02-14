@@ -56,12 +56,31 @@ This demo connects all three layers in a real workflow.
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the full demo
+# Run the full demo (simulation mode — no wallet needed)
 python demo.py
+
+# Run with real x402 payments (requires EVM private key)
+pip install eth-account
+python demo.py --private-key 0xYOUR_PRIVATE_KEY
 
 # Run with an existing TiDB Cloud Zero connection
 python demo.py --connection-string "mysql://user:pass@host:4000/"
 ```
+
+## x402 Integration Modes
+
+| Mode | What happens | Requirements |
+|------|-------------|-------------|
+| **Simulation** (default) | Full protocol flow with simulated signing & data | None |
+| **Live** | Real EIP-712 signing, real x402 endpoints | `eth-account` + private key |
+
+The x402 client implements the real protocol:
+1. `GET /endpoint` → `402 Payment Required` + `PAYMENT-REQUIRED` header
+2. Client signs EIP-712 typed data with EVM wallet
+3. Resend with `PAYMENT-SIGNATURE` header → data returned
+4. Settlement via Coinbase facilitator (`x402.org/facilitator`)
+
+Compatible with any x402-enabled endpoint (CoinGecko, custom APIs, etc.)
 
 ## What's Inside
 
