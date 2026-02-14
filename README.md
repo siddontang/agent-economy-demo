@@ -53,17 +53,21 @@ This demo connects all three layers in a real workflow.
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Install dependencies (Python 3.10+ recommended)
 pip install -r requirements.txt
 
-# Run the full demo (simulation mode — no wallet needed)
+# Run in simulation mode (no wallet needed)
 python demo.py
 
-# Run with real x402 payments (requires EVM private key)
-pip install eth-account
-python demo.py --private-key 0xYOUR_PRIVATE_KEY
+# Run with REAL x402 payments (on-chain, requires testnet USDC)
+pip install "x402[requests,evm]"
+python demo.py --x402-mode real --private-key 0xYOUR_PRIVATE_KEY
 
-# Run with an existing TiDB Cloud Zero connection
+# Or auto-detect: set env var and it picks real mode automatically
+export PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+python demo.py
+
+# Reuse an existing TiDB Cloud Zero connection
 python demo.py --connection-string "mysql://user:pass@host:4000/"
 ```
 
@@ -71,14 +75,16 @@ python demo.py --connection-string "mysql://user:pass@host:4000/"
 
 | Mode | What happens | Requirements |
 |------|-------------|-------------|
-| **Simulation** (default) | Full protocol flow with simulated signing & data | None |
-| **Live** | Real EIP-712 signing, real x402 endpoints | `eth-account` + private key |
+| **Simulation** (default) | Full protocol flow with simulated payments & market data | Python 3.9+, no wallet |
+| **Real** | Actual x402 on-chain payments via Coinbase SDK | Python 3.10+, `x402[requests,evm]`, private key with testnet USDC |
+| **Auto** | Uses real if `PRIVATE_KEY` is set, otherwise simulation | Depends on key availability |
 
-The x402 client implements the real protocol:
+The real x402 client uses the **official Coinbase x402 Python SDK**:
 1. `GET /endpoint` → `402 Payment Required` + `PAYMENT-REQUIRED` header
-2. Client signs EIP-712 typed data with EVM wallet
+2. Client signs payment with EVM wallet via `x402.ExactEvmScheme`
 3. Resend with `PAYMENT-SIGNATURE` header → data returned
 4. Settlement via Coinbase facilitator (`x402.org/facilitator`)
+5. Supports Base Sepolia (testnet) and Base mainnet
 
 Compatible with any x402-enabled endpoint (CoinGecko, custom APIs, etc.)
 

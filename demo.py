@@ -22,7 +22,7 @@ import random
 import argparse
 import requests
 
-from x402_client import X402Client
+from x402_client import create_x402_client, SimulatedX402Client
 from agent_memory import AgentMemory
 from market_agent import MarketAgent
 
@@ -231,7 +231,7 @@ def phase_5_multi_agent(memory, conn):
 
     agents = []
     for agent_id, agent_type, tokens in agents_config:
-        wallet = X402Client(network="base", mode="simulation")
+        wallet = SimulatedX402Client(network="eip155:8453")
         agent = MarketAgent(agent_id, memory, wallet)
         agents.append((agent, tokens))
         print(f"  {GREEN}🤖 {agent_id}{RESET} [{agent_type}] monitoring {', '.join(tokens)}")
@@ -309,12 +309,25 @@ def summary():
 def main():
     parser = argparse.ArgumentParser(description="Agent Economy Demo")
     parser.add_argument("--connection-string", help="Reuse existing TiDB connection")
-    parser.add_argument("--private-key", help="EVM private key for real x402 signing (0x...)")
-    parser.add_argument("--mode", choices=["live", "simulation", "auto"], default="auto",
-                        help="x402 mode: live (real endpoints), simulation (demo data), auto (detect)")
+    parser.add_argument("--x402-mode", choices=["real", "simulation", "auto"], default="auto",
+                        help="x402 mode: real (requires PRIVATE_KEY), simulation, or auto")
+    parser.add_argument("--private-key", help="EVM private key for real x402 payments (0x...)")
     args = parser.parse_args()
 
     banner()
+
+    # Initialize x402 client
+    wallet = create_x402_client(
+        mode=args.x402_mode,
+        private_key=args.private_key,
+    )
+    is_real = not isinstance(wallet, SimulatedX402Client)
+    mode_label = f"{GREEN}🔴 REAL x402 (on-chain payments){RESET}" if is_real else f"{YELLOW}🟡 SIMULATION (no wallet needed){RESET}"
+    print(f"  x402 mode: {mode_label}")
+    print(f"  Wallet:    {wallet.wallet_address[:10]}...{wallet.wallet_address[-8:]}")
+    if is_real:
+        print(f"  Network:   {wallet.network}")
+    print()
 
     # Provision database
     if args.connection_string:
@@ -336,15 +349,7 @@ def main():
 
     # Initialize
     memory = AgentMemory(conn)
-    mode = args.mode if args.mode != "auto" else ("simulation" if not args.private_key else "auto")
-    wallet = X402Client(private_key=args.private_key, network="base", mode=mode)
     agent = MarketAgent("market-agent-01", memory, wallet)
-
-    if wallet.signer._has_eth:
-        print(f"{GREEN}🔑 Real EVM wallet loaded: {wallet.wallet_address[:10]}...{RESET}")
-    else:
-        print(f"{YELLOW}🔧 Simulation mode (no private key — use --private-key for live x402){RESET}")
-    print()
 
     # Run all phases
     phase_1_setup(memory, wallet)
