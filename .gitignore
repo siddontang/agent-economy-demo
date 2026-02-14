@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.env
+tidb-cloud-zero.json
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
