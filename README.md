@@ -105,9 +105,9 @@ When agents have wallets, **off-chain data and state management become essential
 
 - [Coinbase Agentic Wallets](https://www.coinbase.com/developer-platform/discover/launches/agentic-wallets) — Agent wallet skills
 - [x402 Protocol](https://www.x402.org/) — HTTP 402 machine payments
-- [Stripe Machine Payments](https://docs.stripe.com/crypto/machine-payments) — Pay-per-use USDC
-- [CoinGecko x402](https://docs.coingecko.com/reference/x402-introduction) — Pay-per-use market data
-- [TiDB Cloud Zero](https://zero.tidbcloud.com/?code=TIPLANET#demo) — Instant databases for agents
+- [Stripe Machine Payments](https://stripe.com) — Pay-per-use USDC
+- [CoinGecko](https://www.coingecko.com/) — Market data API
+- [TiDB Cloud Zero](https://zero.tidbcloud.com) — Instant databases for agents
 
 ## License
 

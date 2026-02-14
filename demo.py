@@ -295,14 +295,14 @@ def summary():
   Together: agents that can pay, remember, and iterate.
 
 {BOLD}Try it:{RESET}
-  🔗 TiDB Cloud Zero: https://zero.tidbcloud.com/?code=TIPLANET#demo
+  🔗 TiDB Cloud Zero: https://zero.tidbcloud.com
   📖 Skill: https://zero.tidbcloud.com/SKILL.md
 
 {BOLD}References:{RESET}
   • Coinbase Agentic Wallets: coinbase.com/developer-platform
   • x402 Protocol: x402.org
-  • Stripe Machine Payments: docs.stripe.com/crypto/machine-payments
-  • CoinGecko x402: docs.coingecko.com/reference/x402-introduction
+  • Stripe Machine Payments: stripe.com
+  • CoinGecko x402: coingecko.com
 """)
 
 
