@@ -1,6 +1,6 @@
 pymysql>=1.1.0
 requests>=2.31.0
 
-# Real x402 integration (optional — only needed for --x402-mode real)
-# Requires Python 3.10+
-# x402[requests,evm]>=2.0.0
+# For real x402 payments (live mode): pip install "x402[requests,evm]"
+# Includes eth-account, EIP-712 signing, and automatic 402 payment handling
+# x402[requests,evm]>=2.1.0

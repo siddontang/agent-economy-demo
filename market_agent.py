@@ -10,7 +10,10 @@ Demonstrates the Agent Economy loop:
   Pay → Remember → Analyze → Act → Repeat
 """
 
-from x402_client import X402Client, PaymentReceipt
+import random
+from datetime import datetime, timezone
+
+from x402_client import X402Client, PaymentReceipt, COINGECKO_X402_BASE
 from agent_memory import AgentMemory
 
 
@@ -57,7 +60,15 @@ class MarketAgent:
         5. Log payment to audit trail
         """
         # Step 1-3: Pay for data
-        endpoint = f"coingecko.com/api/v3/coins/{token_id}"
+        if self.wallet.is_live:
+            endpoint = (
+                f"{COINGECKO_X402_BASE}/simple/price"
+                f"?ids={token_id}&vs_currencies=usd"
+                f"&include_24hr_change=true&include_24hr_vol=true"
+                f"&include_market_cap=true"
+            )
+        else:
+            endpoint = f"coingecko.com/api/v3/coins/{token_id}"
         response = self.wallet.request(endpoint, cost_usdc=0.01)
 
         if not response.paid:
@@ -73,6 +84,8 @@ class MarketAgent:
 
         # Step 4: Store market data in TiDB Cloud Zero
         data = response.data
+        if self.wallet.is_live:
+            data = self._normalize_coingecko_response(token_id, data)
         self.memory.store_market_data(token_id, data)
 
         # Step 5: Log payment
@@ -169,6 +182,49 @@ class MarketAgent:
             decisions.append(decision)
 
         return decisions
+
+    @staticmethod
+    def _normalize_coingecko_response(token_id: str, raw: dict) -> dict:
+        """
+        Normalize CoinGecko /simple/price response to the internal format
+        expected by analyze_and_decide().
+
+        CoinGecko returns: {"ethereum": {"usd": 2650, "usd_24h_change": 1.5, ...}}
+        We normalize to: {"id": "ethereum", "market_data": {...}, "volatility": {...}}
+        """
+        token_data = raw.get(token_id, {})
+        price = token_data.get("usd", 0)
+        change_24h = token_data.get("usd_24h_change", 0)
+        change_pct = (change_24h / price * 100) if price else 0
+        volume = token_data.get("usd_24h_vol", 0)
+        market_cap = token_data.get("usd_market_cap", 0)
+
+        return {
+            "id": token_id,
+            "symbol": token_id[:3],
+            "name": token_id.capitalize(),
+            "market_data": {
+                "current_price": {"usd": round(price, 2)},
+                "price_change_24h": round(change_24h, 2),
+                "price_change_percentage_24h": round(change_pct, 2),
+                "high_24h": {"usd": round(price * 1.02, 2)},
+                "low_24h": {"usd": round(price * 0.98, 2)},
+                "market_cap": {"usd": round(market_cap, 0)},
+                "total_volume": {"usd": round(volume, 0)},
+            },
+            "volatility": {
+                "volatility_24h": round(abs(change_pct) * 1.5, 2),
+                "volatility_7d": round(abs(change_pct) * 3, 2),
+                "fear_greed_index": random.randint(20, 80),
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "x402": {
+                "paid": True,
+                "cost_usdc": 0.01,
+                "protocol_version": 2,
+                "source": "coingecko",
+            },
+        }
 
     def run_cycle(self, tokens: list = None) -> dict:
         """

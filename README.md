@@ -53,21 +53,21 @@ This demo connects all three layers in a real workflow.
 ## Quick Start
 
 ```bash
-# Install dependencies (Python 3.10+ recommended)
+# Install dependencies
 pip install -r requirements.txt
 
-# Run in simulation mode (no wallet needed)
+# Run the full demo (simulation mode — no wallet needed)
 python demo.py
 
-# Run with REAL x402 payments (on-chain, requires testnet USDC)
+# Run with real x402 payments (requires EVM private key + funded USDC wallet on Base)
 pip install "x402[requests,evm]"
-python demo.py --x402-mode real --private-key 0xYOUR_PRIVATE_KEY
+python demo.py --private-key 0xYOUR_PRIVATE_KEY
 
-# Or auto-detect: set env var and it picks real mode automatically
+# Or use an environment variable (recommended)
 export PRIVATE_KEY=0xYOUR_PRIVATE_KEY
-python demo.py
+python demo.py --private-key $PRIVATE_KEY
 
-# Reuse an existing TiDB Cloud Zero connection
+# Run with an existing TiDB Cloud Zero connection
 python demo.py --connection-string "mysql://user:pass@host:4000/"
 ```
 
@@ -75,25 +75,23 @@ python demo.py --connection-string "mysql://user:pass@host:4000/"
 
 | Mode | What happens | Requirements |
 |------|-------------|-------------|
-| **Simulation** (default) | Full protocol flow with simulated payments & market data | Python 3.9+, no wallet |
-| **Real** | Actual x402 on-chain payments via Coinbase SDK | Python 3.10+, `x402[requests,evm]`, private key with testnet USDC |
-| **Auto** | Uses real if `PRIVATE_KEY` is set, otherwise simulation | Depends on key availability |
+| **Simulation** (default) | Full protocol flow with simulated signing & data | None |
+| **Live** | Real on-chain USDC payments via official Coinbase x402 SDK | `x402[requests,evm]` + private key + funded wallet |
 
-The real x402 client uses the **official Coinbase x402 Python SDK**:
-1. `GET /endpoint` → `402 Payment Required` + `PAYMENT-REQUIRED` header
-2. Client signs payment with EVM wallet via `x402.ExactEvmScheme`
-3. Resend with `PAYMENT-SIGNATURE` header → data returned
-4. Settlement via Coinbase facilitator (`x402.org/facilitator`)
-5. Supports Base Sepolia (testnet) and Base mainnet
+Live mode uses the **official Coinbase x402 Python SDK** (`pip install "x402[requests,evm]"`):
+1. `GET /x402/simple/price?ids=ethereum` → `402 Payment Required` + `PAYMENT-REQUIRED` header
+2. SDK automatically signs EIP-712 typed data with your EVM wallet
+3. SDK resends with `PAYMENT-SIGNATURE` header → real data returned
+4. On-chain USDC settlement via Coinbase facilitator (`x402.org/facilitator`)
 
-Compatible with any x402-enabled endpoint (CoinGecko, custom APIs, etc.)
+Live endpoints: [CoinGecko x402 API](https://docs.coingecko.com/docs/x402) — $0.01 USDC/request, no API key needed.
 
 ## What's Inside
 
 | File | Description |
 |------|-------------|
 | `demo.py` | Main demo — full agent economy workflow |
-| `x402_client.py` | x402 payment protocol client (simulated) |
+| `x402_client.py` | x402 payment protocol client (live via Coinbase SDK + simulation fallback) |
 | `agent_memory.py` | TiDB Cloud Zero memory layer |
 | `market_agent.py` | Market monitoring agent with pay-per-use data |
 

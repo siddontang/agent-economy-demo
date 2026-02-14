@@ -59,7 +59,7 @@ class AgentMemory:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS payment_log (
                 id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                tx_id VARCHAR(66) NOT NULL UNIQUE,
+                tx_id VARCHAR(255) NOT NULL UNIQUE,
                 amount_usdc DECIMAL(10, 4) NOT NULL,
                 payer VARCHAR(42) NOT NULL,
                 payee VARCHAR(42) NOT NULL,
